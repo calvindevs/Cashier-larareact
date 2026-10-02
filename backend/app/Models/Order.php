@@ -12,4 +12,14 @@ class Order extends Model
         'amount_paid',
         'change'
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function orderDetails()
+    {
+        return $this->hasMany(OrderDetail::class);
+    }
 }
