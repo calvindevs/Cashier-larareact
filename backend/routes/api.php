@@ -13,6 +13,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
 Route::get('/products', [ProductController::class, 'index'])->middleware('auth:sanctum');
+
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::resource('/products', ProductController::class)->except(['create', 'edit', 'index', 'show']);
     Route::post('/products/{product}/restock', [ProductController::class, 'restock']);
