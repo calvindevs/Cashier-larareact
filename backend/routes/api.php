@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Auth\AuthController;
+use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -19,6 +20,6 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::post('/products/{product}/restock', [ProductController::class, 'restock']);
 });
 
-// Route::middleware('role:cashier')->group(function () {
-    
-// });
+Route::middleware(['role:cashier', 'auth:sanctum'])->group(function () {
+    Route::post('/orders', [OrderController::class, 'store']);
+});
