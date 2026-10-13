@@ -30,23 +30,37 @@ class OrderController extends Controller
 
         $validated = $validator->validated();
 
-        $order = DB::transaction(function () use ($validated, $request) {
+        $merged = [];
+        foreach($validated['items'] as $item){
+            $productId = $item['product_id'];
+            $quantity =  $item['quantity'];
+            if(isset($merged[$productId])){
+                $merged[$productId]['quantity'] += $quantity;
+            }else{
+                $merged[$productId] = [
+                    'quantity' => $quantity
+                ];
+            }
+        }
+
+        $order = DB::transaction(function () use ($validated, $request, $merged) {
             $amountPaid = $validated['amount_paid'];
             $total = 0;
-            foreach ($validated['items'] as $item) {
-                $product = Product::where('id', $item['product_id'])->lockForUpdate()->firstOrFail();
-                $productPrice = $product->price;
-                $productStock = $product->stock;
+            $products = [];
+            foreach ($merged as $productId => $item) {
+                $product = Product::where('id', $productId)->lockForUpdate()->firstOrFail();
                 $quantity = $item['quantity'];
 
-                if ($productStock < $quantity) {
+                if ($product->stock < $quantity) {
                     throw ValidationException::withMessages([
                         'items' => "Stok produk {$product->name} tidak mencukupi."
                     ]);
                 }
 
-                $subtotal = $productPrice * $quantity;
+                $subtotal = $product->price * $quantity;
                 $total += $subtotal;
+
+                $products[$productId] = $product;
             }
 
             if ($amountPaid < $total) {
@@ -56,15 +70,16 @@ class OrderController extends Controller
             }
 
             $change = $amountPaid - $total;
+
             $order = Order::create([
                 'user_id' => $request->user()->id,
                 'subtotal' => $total,
                 'amount_paid' => $amountPaid,
                 'change' => $change
             ]);
-            
-            foreach ($validated['items'] as $item) {
-                $product = Product::where('id', $item['product_id'])->lockForUpdate()->firstOrFail();
+
+            foreach ($merged as $productId => $item) {
+                $product = Product::where('id', $productId)->lockForUpdate()->firstOrFail();
                 $quantity = $item['quantity'];
                 OrderDetail::create([
                     'order_id' => $order->id,
@@ -77,6 +92,8 @@ class OrderController extends Controller
 
             return $order;
         });
+
+        $order->load("orderDetails.product");
 
         return response()->json([
             'message' => 'Checkout berhasil',

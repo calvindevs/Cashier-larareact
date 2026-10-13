@@ -20,6 +20,6 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::post('/products/{product}/restock', [ProductController::class, 'restock']);
 });
 
-Route::middleware(['role:cashier', 'auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'role:cashier'])->group(function () {
     Route::post('/orders', [OrderController::class, 'store']);
 });
