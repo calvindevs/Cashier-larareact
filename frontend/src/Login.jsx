@@ -84,6 +84,11 @@ export default function Login() {
                 >
                   Sign in
                 </button>
+                {error && (
+                  <p className="text-sm text-red-500 font-medium text-center">
+                    {error}
+                  </p>
+                )}
               </form>
             </div>
           </div>
